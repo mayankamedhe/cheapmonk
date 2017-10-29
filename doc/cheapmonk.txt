@@ -1,0 +1,240 @@
+*cheapmonk.txt*   A plugin which enables multiple users to work on the same file
+
+       _                                            _    ~
+   ___| |__   ___  __ _ _ __  _ __ ___   ___  _ __ | | __~
+  / __| '_ \ / _ \/ _` | '_ \| '_ ` _ \ / _ \| '_ \| |/ /~
+ | (__| | | |  __/ (_| | |_) | | | | | | (_) | | | |   < ~
+  \___|_| |_|\___|\__,_| .__/|_| |_| |_|\___/|_| |_|_|\_\ ~
+                       |_|                               
+
+
+          A plugin for collaborative editing for Vim
+
+==============================================================================
+CONTENTS                                                  *cheapmonk-contents*
+
+    1. Introduction .................... |cheapmonk-intro|
+    1.1 Installation ............... |cheapmonk-install|
+    2. Usage ........................... |cheapmonk-usage|
+    3. Commands......................... |cheapmonk-commands|
+	3.1 StartWriting................ |cheapmonk-StartWriting|
+	3.2 SendBufferContents.......... |cheapmonk-SendBufferContents|
+	3.3 Disconnect.................. |cheapmonk-Disconnect|
+	3.4 StartReading................ |cheapmonk-StartReading|
+	3.5 StopReading................. |cheapmonk-StopReading|
+    3.6 CloseChannelWrapper......... |cheapmonk-CloseChannelWrapper|
+    3.7 CleanAndRewrite............. |cheapmonk-CleanAndRewrite|
+    3.8 StartServer................. |cheapmonk-StartServer|
+    3.9 StopServer.................. |cheapmonk-StopServer|
+    4. Bugs ............................ |cheapmonk-bugs|
+    5. Citations ....................... |cheapmonk-citations|
+    6. About ........................... |cheapmonk-about|
+
+==============================================================================
+1. Introduction                                              *cheapmonk-intro*
+
+
+Cheapmonk allows multiple users to see what others are doing and suggest
+changes. There is a "super user" who gets to see what the other users are
+doing.
+The "super user" sets a passcode. The other users ("clients") can connect
+to the "super user" by specifying this passcode and the IP of the
+"super user". Once a client connectst to the super user, a window split occurs
+in VIM for the super user and the contents of what the client is writing on
+there own VIM gets displayed over there. As multiple clients can connect to
+the super user, multiple split windows will be seen on the super user's VIM.
+In the middle, any client can disconnect but what they have written so far
+will be displayed in super user's VIM. When the super user is done reading,
+he/she can disconnect all the clients and manipulate the buffers as he/she
+pleases.
+
+------------------------------------------------------------------------------
+
+1.1 Installation:                                          *cheapmonk-install*
+This plugin is not Pathogen/Vundle compatible. This means that you have to
+manually add the plugin files to you .vim folder. In case you are new to vim
+start by making a .vim directory in your home folder (If not already there).
+Create two more directories in .vim titled "doc" and "plugin" (without
+the quotes). Enter "doc" and paste "cheapmonk.txt". Now, enter "plugin" and
+paste "cheapmonk.vim".
+At this point, your directory tree should look something like this.
+
+.vim
+├── doc
+│   └── cheapmonk.txt
+└── plugin
+    └── cheapmonk.vim
+
+To generate help tags, open VIM and run the following command:
+    :helptags ~/.vim/doc/cheapmonk.txt
+Now the next time you write:
+    :help cheapmonk
+This file will be displayed.
+
+------------------------------------------------------------------------------
+
+This is a very buggy plugin and is quite removed from what we originally 
+promised. It does a few useful things though. 
+
+==============================================================================
+2. Usage                                                     *cheapmonk-usage*
+
+To illustrate, we'll assume three users on computers 'M','C' and 'S' are
+trying to use this plugin. 
+Let us assume that 'M' is the super user. Assume the IP of 'M' is 10.0.2.15
+
+To start a new cheapmonk server: 'M' will firstly start the server:
+    :call StartReading()
+
+To connect to a running server: Users on computers 'C' and 'S' will call the
+StartWriting function to connect to 'M':
+    :call StartWriting("10.0.2.15","user1","p",3000)
+Look at the functions section for more details regarding the arguments
+of this function.
+
+To disconnect from the server: Users 'C' and 'S' can call Disconnect to quit
+the writing session. Any of there further changes wouldn't be updated on 'M'
+    :call Disconnect("user1","p")
+
+To remove all clients: 'M' can execute:
+    :call StopReading(...)
+See the commands section for more details.
+
+==============================================================================
+3. Commands                                               *cheapmonk-commands*
+
+The detailed description of all commands can be found here
+
+------------------------------------------------------------------------------
+
+3.1 StartWriting:                                     *cheapmonk-StartWriting*
+On running this command with IP address, name, password and delay as 
+arguments, a client can connect to a server VIM. The name specified by the
+client is displayed as the buffer name for the super user. This way the super
+user can make out which client is writing what.
+
+------------------------------------------------------------------------------
+
+3.2 SendBufferContents:                         *cheapmonk-SendBufferContents*
+
+This command sends the buffer file from the client to the server. Users should
+NEVER EVER call this command
+
+------------------------------------------------------------------------------
+
+3.3 Disconnect:                                         *cheapmonk-Disconnect*
+
+This command enables the client to disconnect from the server.
+
+------------------------------------------------------------------------------
+
+3.4 StartReading                                      *cheapmonk-StartReading*
+
+This command enables the server to start reading the files of its clients. 
+
+------------------------------------------------------------------------------
+3.5 StopReading                                        *cheapmonk-StopReading*
+
+This command enables the server to stop reading the client files. This 
+command takes variable number of arguments. If simply called without any
+arguments like:
+    :call StopReading()
+The clients are disconnected and nothing else. On the other hand, if the
+function is called like:
+    :call StopReading(1,"username")
+The server sends the contents of the buffer name with name "username" to the
+clients and replaces whatever was written in the clients files earlier. This
+gives the super user the power to select which is the most relevant file. For
+example, let's say that 'M' is writing a program and has delegated some
+functions A() and B() to 'C' and 'S' respectively. Once 'C' and 'S' have done
+there job, 'M' can enter the buffers where the updates are present and copy
+them into its own file. Now it can call StopWriting and send it's final file
+to both 'C' and 'S'.
+
+------------------------------------------------------------------------------
+3.6 CloseChannelWrapper                        *cheapmonk-CloseChannelWrapper*
+
+In VIM, you cannot use the "execute" command on script variables. That is why
+we have made a wrapper function to close the client side socket. 
+NOT TO BE CALLED BY USER!
+
+------------------------------------------------------------------------------
+3.7 CleanAndRewrite                                *cheapmonk-CleanAndRewrite*
+
+Rewrites the new contents obtained from the clients in the windows adjacent to
+the one in which the super user is writing.
+NOT TO BE CALLED BY USER!
+
+------------------------------------------------------------------------------
+3.8 StartServer                                        *cheapmonk-StartServer*
+
+What is happening in this method is that in the VIM environment, a server is
+started on a seperate thread. When VIM is exited, this thread terminates and
+the server closes on its own. 
+NOT TO BE CALLED BY USER!
+
+------------------------------------------------------------------------------
+3.9 StopServer                                          *cheapmonk-StopServer*
+
+Safely close the server thread.
+NOT TO BE CALLED BY THE USER!
+
+==============================================================================
+4. Bugs                                                       *cheapmonk-bugs*
+
+We have found the following bugs while using our plugin:
+    1) Let's say the final file contains quotation marks. If the super user
+       tries to update the client files with this files, then nothing will
+       happen. This is probably because we aren't escaping quotation marks
+       properly. The good news is if the document which the client is sending
+       contains quotation marks, no problem will arise.
+    2) If you (as the super user) find that all the windows contain the
+       same buffer which is the file in which you are editing, then this is
+       a bug. However there is a temporary solution which no doubt is going to 
+       irritate you (We are sorry). Execute the following command
+          :b! "username"
+       Now in quick succession, press <c-w><c-p>. 
+       Now this problem would not occur. But at the same time you would be 
+       wondering, "Why the hell am I even using this?" 
+    4) If you didn't close VIM properly, then .swp files will be created
+       and that'll make life tough the next time you try to use this 
+       creation
+    3) The plugin has only been tested with our .vimrc files. Hence some
+       glitches may arise. Let us know about them. Email addresses can be
+       found in the About section.
+
+==============================================================================
+5. Citations                                             *cheapmonk-citations*
+
+Following are the major reference sources we used while making this plugin:
+    1) To implement the multi-threaded server :
+       https://docs.python.org/3/library/socketserver.html#socketserver.ThreadingMixIn
+    2) VIM User Manual.
+    3) To understand the foundations for programming in Vimscript :
+       learnvimscriptthehardway.stevelosh.com 
+    4) We tried to first work with a fork of VIM with multithreading
+       support. The version of VIM that is normally distributed isn't
+       thread safe. This means that if you write python script which 
+       issues VIM commands from multiple threads, VIM will crash. This
+       fork can be found at :
+       https://github.com/tarruda/vim/tree/event-loop
+    5) For other possible solutions we went looked at the VIM 
+       developers at : https://groups.google.com/forum/#!forum/vim_dev
+    6) From there we reached Bram Moolenaar's Github page (Where we 
+       should have gone in the first place) and learnt about timers and
+       channels. Timers allowed us to call functions at time delays (This is
+       why we needed multi-threading in the first place). Channels are an
+       abstraction for sockets basically and enable different VIM instances 
+       to connect to a server. 
+
+==============================================================================
+6. About                                                     *cheapmonk-about*
+
+cheapmonk was created by:
+	Sumit Chaturvedi - sumit.chaturvedi@gmail.com 
+	Mayanka Medhe - mayankaanilmedhe@gmail.com
+	Chanchal Godara - chanchalgd246@gmail.com
+
+Find the latest version of cheapmonk here:
+https://git.cse.iitb.ac.in/sumitc/Cheapmonk
+
